@@ -92,8 +92,28 @@ namespace WeatherApp
 
             var weatherData = await WeatherForecast.getApiData(cityName);
             string locationName = weatherData.city.name;
-          
+            string sunrise = convertUnixToDT(double.Parse(weatherData.city.sunrise.ToString(), System.Globalization.CultureInfo.InvariantCulture)).ToString();
+            string sunset = convertUnixToDT(double.Parse(weatherData.city.sunset.ToString(), System.Globalization.CultureInfo.InvariantCulture)).ToString();
+            foreach (var wData in weatherData.list)
+            {
+                string windSpeed = wData.wind.speed.ToString();
+                string windDirection = wData.wind.deg.ToString();
+                string currentTemp = Math.Round(convertKelvinToCels(wData.main.temp),1).ToString();
+            }
+
             return locationData;
+        }
+
+        private double convertKelvinToCels(double v)
+        {
+            throw new NotImplementedException();
+        }
+
+        private DateTime convertUnixToDT(double unixTime)
+        {
+            long seconds = Convert.ToInt64(unixTime);
+            DateTimeOffset dto = DateTimeOffset.FromUnixTimeSeconds(seconds);
+            return dto.LocalDateTime;
         }
     }
 }
