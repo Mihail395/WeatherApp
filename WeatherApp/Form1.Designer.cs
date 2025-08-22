@@ -28,16 +28,16 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
-            System.Windows.Forms.DataVisualization.Charting.Legend legend2 = new System.Windows.Forms.DataVisualization.Charting.Legend();
-            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea3 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend3 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series3 = new System.Windows.Forms.DataVisualization.Charting.Series();
             this.metroLabel1 = new MetroFramework.Controls.MetroLabel();
-            this.metroComboBox1 = new MetroFramework.Controls.MetroComboBox();
             this.metroLabel2 = new MetroFramework.Controls.MetroLabel();
             this.cbMyCountry = new MetroFramework.Controls.MetroComboBox();
             this.btnSearch = new MetroFramework.Controls.MetroButton();
             this.chart1 = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.metroPanel1 = new MetroFramework.Controls.MetroPanel();
+            this.tbCityName = new MetroFramework.Controls.MetroTextBox();
             ((System.ComponentModel.ISupportInitialize)(this.chart1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -52,16 +52,6 @@
             this.metroLabel1.Size = new System.Drawing.Size(100, 25);
             this.metroLabel1.TabIndex = 0;
             this.metroLabel1.Text = "City Name";
-            // 
-            // metroComboBox1
-            // 
-            this.metroComboBox1.FormattingEnabled = true;
-            this.metroComboBox1.ItemHeight = 23;
-            this.metroComboBox1.Location = new System.Drawing.Point(177, 78);
-            this.metroComboBox1.Name = "metroComboBox1";
-            this.metroComboBox1.Size = new System.Drawing.Size(163, 29);
-            this.metroComboBox1.TabIndex = 1;
-            this.metroComboBox1.UseSelectable = true;
             // 
             // metroLabel2
             // 
@@ -78,6 +68,7 @@
             // 
             // cbMyCountry
             // 
+            this.cbMyCountry.AllowDrop = true;
             this.cbMyCountry.Anchor = System.Windows.Forms.AnchorStyles.Top;
             this.cbMyCountry.FormattingEnabled = true;
             this.cbMyCountry.ItemHeight = 23;
@@ -105,16 +96,16 @@
             this.chart1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            chartArea2.Name = "ChartArea1";
-            this.chart1.ChartAreas.Add(chartArea2);
-            legend2.Name = "Legend1";
-            this.chart1.Legends.Add(legend2);
+            chartArea3.Name = "ChartArea1";
+            this.chart1.ChartAreas.Add(chartArea3);
+            legend3.Name = "Legend1";
+            this.chart1.Legends.Add(legend3);
             this.chart1.Location = new System.Drawing.Point(66, 128);
             this.chart1.Name = "chart1";
-            series2.ChartArea = "ChartArea1";
-            series2.Legend = "Legend1";
-            series2.Name = "Series1";
-            this.chart1.Series.Add(series2);
+            series3.ChartArea = "ChartArea1";
+            series3.Legend = "Legend1";
+            series3.Name = "Series1";
+            this.chart1.Series.Add(series3);
             this.chart1.Size = new System.Drawing.Size(775, 298);
             this.chart1.TabIndex = 5;
             this.chart1.Text = "chart1";
@@ -135,17 +126,47 @@
             this.metroPanel1.VerticalScrollbarHighlightOnWheel = false;
             this.metroPanel1.VerticalScrollbarSize = 10;
             // 
+            // tbCityName
+            // 
+            // 
+            // 
+            // 
+            this.tbCityName.CustomButton.Image = null;
+            this.tbCityName.CustomButton.Location = new System.Drawing.Point(156, 1);
+            this.tbCityName.CustomButton.Name = "";
+            this.tbCityName.CustomButton.Size = new System.Drawing.Size(21, 21);
+            this.tbCityName.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
+            this.tbCityName.CustomButton.TabIndex = 1;
+            this.tbCityName.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
+            this.tbCityName.CustomButton.UseSelectable = true;
+            this.tbCityName.CustomButton.Visible = false;
+            this.tbCityName.Lines = new string[0];
+            this.tbCityName.Location = new System.Drawing.Point(172, 80);
+            this.tbCityName.MaxLength = 32767;
+            this.tbCityName.Name = "tbCityName";
+            this.tbCityName.PasswordChar = '\0';
+            this.tbCityName.ScrollBars = System.Windows.Forms.ScrollBars.None;
+            this.tbCityName.SelectedText = "";
+            this.tbCityName.SelectionLength = 0;
+            this.tbCityName.SelectionStart = 0;
+            this.tbCityName.ShortcutsEnabled = true;
+            this.tbCityName.Size = new System.Drawing.Size(178, 23);
+            this.tbCityName.TabIndex = 7;
+            this.tbCityName.UseSelectable = true;
+            this.tbCityName.WaterMarkColor = System.Drawing.Color.FromArgb(((int)(((byte)(109)))), ((int)(((byte)(109)))), ((int)(((byte)(109)))));
+            this.tbCityName.WaterMarkFont = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Pixel);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(910, 693);
+            this.Controls.Add(this.tbCityName);
             this.Controls.Add(this.metroPanel1);
             this.Controls.Add(this.chart1);
             this.Controls.Add(this.btnSearch);
             this.Controls.Add(this.cbMyCountry);
             this.Controls.Add(this.metroLabel2);
-            this.Controls.Add(this.metroComboBox1);
             this.Controls.Add(this.metroLabel1);
             this.Name = "Form1";
             this.Text = "Weather Forecast";
@@ -160,12 +181,12 @@
         #endregion
 
         private MetroFramework.Controls.MetroLabel metroLabel1;
-        private MetroFramework.Controls.MetroComboBox metroComboBox1;
         private MetroFramework.Controls.MetroLabel metroLabel2;
         private MetroFramework.Controls.MetroComboBox cbMyCountry;
         private MetroFramework.Controls.MetroButton btnSearch;
         private System.Windows.Forms.DataVisualization.Charting.Chart chart1;
         private MetroFramework.Controls.MetroPanel metroPanel1;
+        private MetroFramework.Controls.MetroTextBox tbCityName;
     }
 }
 
