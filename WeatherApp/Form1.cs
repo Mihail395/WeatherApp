@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -21,6 +23,11 @@ namespace WeatherApp
         private Image cloud;
         private Image termometer;
         String myCountry;
+
+        private string weatherIconsDownloadPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Weather_App",
+            "Icons"
+            );
         public Form1()
         {
             InitializeComponent();
@@ -99,14 +106,82 @@ namespace WeatherApp
                 string windSpeed = wData.wind.speed.ToString();
                 string windDirection = wData.wind.deg.ToString();
                 string currentTemp = Math.Round(convertKelvinToCels(wData.main.temp),1).ToString();
+                string tempMin = Math.Round(convertKelvinToCels(wData.main.temp_min), 1).ToString();
+                string tempMax = Math.Round(convertKelvinToCels(wData.main.temp_max), 1).ToString();
+                string wDescription = wData.weather[0].description;
+                string clouds = wData.clouds.all.ToString();
+                string humidity = wData.main.humidity.ToString();
+                string weatherIcon = wData.weather[0].icon + "@2x.png";
+                Image wIcon;
+                byte[] wIconByte;
+
+                if (!Directory.Exists(weatherIconsDownloadPath))
+                {
+                    Directory.CreateDirectory(weatherIconsDownloadPath);
+                }
+                if (File.Exists(weatherIconsDownloadPath + weatherIcon))
+                {
+                    wIcon = LoadImageWithoutLock(Path.Combine(weatherIconsDownloadPath, weatherIcon));
+                    wIconByte = (byte[]) imageConverter.ConvertTo(wIcon,typeof(byte[])); 
+                }
+                else
+                {
+                    using (WebClient downloadC = new WebClient())
+                    {
+                        await Task.Run(() => downloadC.DownloadFileTaskAsync("https://openweathermap.org/img/wn/"
+                            + weatherIcon, Path.Combine(weatherIconsDownloadPath, weatherIcon)));
+                    }
+                    wIcon = LoadImageWithoutLock(Path.Combine(weatherIconsDownloadPath, weatherIcon));
+                    wIconByte = (byte[])imageConverter.ConvertTo(wIcon, typeof(byte[]));
+                }
+
+                DateTime time = Convert.ToDateTime(wData.dt_txt);
+                Image windDirectionIcon = rotateImage(windDirectionArrow, float.Parse(windDirection));
+                byte[] windDirectionIconByte = (byte[])imageConverter.ConvertTo(windDirectionIcon, typeof(byte[]));
+
+                locationData.Rows.Add(new Object[] { currentTemp, tempMin, tempMax, clouds, humidity,
+                wDescription, wIconByte, locationName, sunrise, sunset, windSpeed, time, time.DayOfWeek,
+                time.Day, time.Month, time.Year, time.TimeOfDay, windDirection, windDirectionIconByte });
+
+            }
+
+            if (locationData.Rows.Count > 0)
+            {
+                locationData.DefaultView.Sort = "Date asc";
             }
 
             return locationData;
         }
 
-        private double convertKelvinToCels(double v)
+        // Load image safely without locking the file
+        private Image LoadImageWithoutLock(string filePath)
         {
-            throw new NotImplementedException();
+            using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            {
+                return Image.FromStream(fs);
+            }
+        }
+
+        private Image rotateImage(Image windDirectionArrow, float angle)
+        {
+            if (windDirectionArrow == null)
+                throw new ArgumentNullException(nameof(windDirectionArrow));
+
+            Bitmap rotatedBmp = new Bitmap(windDirectionArrow.Width, windDirectionArrow.Height);
+            rotatedBmp.SetResolution(windDirectionArrow.HorizontalResolution, windDirectionArrow.VerticalResolution);
+            using (Graphics g = Graphics.FromImage(rotatedBmp))
+            {
+                g.TranslateTransform(windDirectionArrow.Width / 2f, windDirectionArrow.Height / 2f);
+                g.RotateTransform(angle);
+                g.TranslateTransform(-windDirectionArrow.Width / 2f, -windDirectionArrow.Height / 2f);
+                g.DrawImage(windDirectionArrow, new Point(0, 0));
+            }
+            return rotatedBmp;
+        }
+
+        private double convertKelvinToCels(double temp)
+        {
+            return temp - 273.15;
         }
 
         private DateTime convertUnixToDT(double unixTime)
