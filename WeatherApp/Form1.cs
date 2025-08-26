@@ -1,4 +1,5 @@
 ﻿using MetroFramework;
+using MetroFramework.Controls;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,6 +11,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.DataVisualization.Charting;
 
 namespace WeatherApp
 {
@@ -53,8 +55,9 @@ namespace WeatherApp
                 if (tbCityName.Text.Length == 0) {
                     MetroFramework.MetroMessageBox.Show(this,"Please input a city name first!");
                 }
-                this.Text = "Showing the weather for " + tbCityName.Text;
+                this.Text = "Showing the weather for " + tbCityName.Text.ToString();
                 OpenWeatherAPI_Call(tbCityName.Text);
+                this.Refresh();
             }
             catch (Exception ex)
             {
@@ -68,7 +71,154 @@ namespace WeatherApp
            DataTable weatherData = new DataTable();
             weatherData = await API_Call(cityName);
 
+            chart1.ChartAreas["ChartArea1"].AxisX.Interval = 1;
+            this.chart1.Series.Clear();
             
+            Title title = new Title();
+            title.Font = new Font("Arial", 16, FontStyle.Bold);
+            title.Text = "Weather in the next 5 days from " + DateTime.Now.DayOfWeek.ToString() + 
+                " to " + DateTime.Now.AddDays(5).DayOfWeek.ToString();
+
+            chart1.Titles.Add(title);
+            Series seriesWeatherData = this.chart1.Series.Add("°C");
+            seriesWeatherData.ChartType = SeriesChartType.Line;
+            seriesWeatherData.Color = Color.Green;
+            seriesWeatherData.BorderWidth = 3;
+            seriesWeatherData.IsVisibleInLegend = false;
+
+            UnloadTiles(metroPanel1);
+            foreach (DataRow item in weatherData.Rows)
+            {
+                seriesWeatherData.Points.AddXY(item["Day of week"].ToString() + " " +
+                    item["Time"].ToString(), Convert.ToDouble(item["Temp"]));
+                MetroTile tile = createNewTile(item["Day of week"].ToString() + " " +
+                    item["Time"].ToString());
+                fillTile(tile, item);
+                addTile(metroPanel1, tile);
+            }
+        }
+
+        private void addTile(MetroPanel metroPanel1, MetroTile tile)
+        {
+            var nTiles = metroPanel1.Controls.OfType<MetroTile>().Count();
+            tile.Location = new Point(nTiles * 220, 0);
+            metroPanel1.Controls.Add(tile);
+        }
+
+        private void fillTile(MetroTile tile, DataRow item)
+        {
+            PictureBox weatherIcon = new PictureBox();
+            weatherIcon.Size = new Size(70, 70);
+            weatherIcon.Location = new Point(0, 0);
+            weatherIcon.Image = (Image)imageConverter.ConvertFrom(item["Icon"]);
+            weatherIcon.SizeMode = PictureBoxSizeMode.Zoom;
+            weatherIcon.BackColor = Color.Transparent;
+            tile.Controls.Add(weatherIcon);
+
+            MetroLabel weatherDesc = new MetroLabel();
+            weatherDesc.Text = item["Weather Description"].ToString();
+            weatherDesc.Location = new Point(70, 30);
+            weatherDesc.AutoSize = true;
+            tile.Controls.Add(weatherDesc);
+
+            PictureBox tempIcon = new PictureBox();
+            tempIcon.Size = new Size(20, 20);
+            tempIcon.Location = new Point(10, 70);
+            tempIcon.Image = termometer;
+            tempIcon.SizeMode = PictureBoxSizeMode.Zoom;
+            tempIcon.BackColor = Color.Transparent;
+            tile.Controls.Add(tempIcon);
+
+            MetroLabel tempTxt = new MetroLabel();
+            tempTxt.Text = item["Temp"].ToString()+ " °C";
+            tempTxt.Location = new Point(40, 70);
+            tempTxt.AutoSize = true;
+            tile.Controls.Add(tempTxt);
+
+            PictureBox windIcon = new PictureBox();
+            windIcon.Size = new Size(20, 20);
+            windIcon.Location = new Point(10, 95);
+            windIcon.Image = wind;
+            windIcon.SizeMode = PictureBoxSizeMode.Zoom;
+            windIcon.BackColor = Color.Transparent;
+            tile.Controls.Add(windIcon);
+
+            MetroLabel windTxt = new MetroLabel();
+            windTxt.Text = item["Wind Speed m/s"].ToString()+ " m/s";
+            windTxt.Location = new Point(40, 95);
+            windTxt.AutoSize = true;
+            tile.Controls.Add(windTxt);
+
+            PictureBox cloudsIcon = new PictureBox();
+            cloudsIcon.Size = new Size(20, 20);
+            cloudsIcon.Location = new Point(10, 120);
+            cloudsIcon.Image = cloud;
+            cloudsIcon.SizeMode = PictureBoxSizeMode.Zoom;
+            cloudsIcon.BackColor = Color.Transparent;
+            tile.Controls.Add(cloudsIcon);
+
+            MetroLabel cloudsTxt = new MetroLabel();
+            cloudsTxt.Text = item["Clouds"].ToString() + " %";
+            cloudsTxt.Location = new Point(40, 120);
+            cloudsTxt.AutoSize = true;
+            tile.Controls.Add(cloudsTxt);
+
+            PictureBox sunriseIcon = new PictureBox();
+            sunriseIcon.Size = new Size(20, 20);
+            sunriseIcon.Location = new Point(10, 145);
+            sunriseIcon.Image = sunrise;
+            sunriseIcon.SizeMode = PictureBoxSizeMode.Zoom;
+            sunriseIcon.BackColor = Color.Transparent;
+            tile.Controls.Add(sunriseIcon);
+
+            MetroLabel sunriseTxt = new MetroLabel();
+            sunriseTxt.Text = Convert.ToDateTime(item["Sunrise"].ToString()).ToShortTimeString();
+            sunriseTxt.Location = new Point(40, 145);
+            sunriseTxt.AutoSize = true;
+            tile.Controls.Add(sunriseTxt);
+
+            PictureBox sunsetIcon = new PictureBox();
+            sunsetIcon.Size = new Size(20, 20);
+            sunsetIcon.Location = new Point(110, 145);
+            sunsetIcon.Image = sunset;
+            sunsetIcon.SizeMode = PictureBoxSizeMode.Zoom;
+            sunsetIcon.BackColor = Color.Transparent;
+            tile.Controls.Add(sunsetIcon);
+
+            MetroLabel sunsetTxt = new MetroLabel();
+            sunsetTxt.Text = Convert.ToDateTime(item["Sunset"].ToString()).ToShortTimeString();
+            sunsetTxt.Location = new Point(140, 145);
+            sunsetTxt.AutoSize = true;
+            tile.Controls.Add(sunsetTxt);
+
+            PictureBox windDirIcon = new PictureBox();
+            windDirIcon.Size = new Size(40, 40);
+            windDirIcon.Location = new Point(140, 90);
+            windDirIcon.Image = (Image)imageConverter.ConvertFrom(item["Wind Direction"]);
+            windDirIcon.SizeMode = PictureBoxSizeMode.Zoom;
+            windDirIcon.BackColor = Color.Transparent;
+            tile.Controls.Add(windDirIcon);
+
+            MetroLabel windDirTxt = new MetroLabel();
+            windDirTxt.Text = "Wind Direction";
+            windDirTxt.Location = new Point(110, 70);
+            windDirTxt.AutoSize = true;
+            tile.Controls.Add(windDirTxt);
+        }
+        
+
+        private MetroTile createNewTile(string v)
+        {
+            MetroTile tile = new MetroTile();
+            tile.Text = v;
+            tile.Style = MetroColorStyle.Blue;
+            tile.TileTextFontSize = MetroTileTextSize.Tall;
+            tile.UseStyleColors = true;
+            tile.Theme = MetroThemeStyle.Dark;
+            tile.Tag = v + "_Tag";
+            tile.Size = new Size(210, 210);
+            return tile;
+
         }
 
         private async Task<DataTable> API_Call(string cityName)
@@ -153,6 +303,18 @@ namespace WeatherApp
             return locationData;
         }
 
+        private void UnloadTiles(MetroPanel metroPanel1)
+        {
+            var tiles = metroPanel1.Controls.OfType<MetroTile>().ToArray();
+            for (int i = tiles.Count() - 1; i >= 0; i--)
+            {
+                metroPanel1.Controls.Remove(tiles[i]);
+                tiles[i].Dispose();
+            }
+            metroPanel1.AutoScrollPosition = new Point(0, 0);
+            metroPanel1.HorizontalScroll.Value = 0;
+        }
+
         // Load image safely without locking the file
         private Image LoadImageWithoutLock(string filePath)
         {
@@ -167,12 +329,15 @@ namespace WeatherApp
             if (windDirectionArrow == null)
                 throw new ArgumentNullException(nameof(windDirectionArrow));
 
+            float adjustedAngle = angle - 90f;
+            adjustedAngle += 180f;
+
             Bitmap rotatedBmp = new Bitmap(windDirectionArrow.Width, windDirectionArrow.Height);
             rotatedBmp.SetResolution(windDirectionArrow.HorizontalResolution, windDirectionArrow.VerticalResolution);
             using (Graphics g = Graphics.FromImage(rotatedBmp))
             {
                 g.TranslateTransform(windDirectionArrow.Width / 2f, windDirectionArrow.Height / 2f);
-                g.RotateTransform(angle);
+                g.RotateTransform(adjustedAngle);
                 g.TranslateTransform(-windDirectionArrow.Width / 2f, -windDirectionArrow.Height / 2f);
                 g.DrawImage(windDirectionArrow, new Point(0, 0));
             }
@@ -189,6 +354,11 @@ namespace WeatherApp
             long seconds = Convert.ToInt64(unixTime);
             DateTimeOffset dto = DateTimeOffset.FromUnixTimeSeconds(seconds);
             return dto.LocalDateTime;
+        }
+
+        private void metroPanel1_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 }
