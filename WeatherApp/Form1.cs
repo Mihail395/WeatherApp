@@ -12,11 +12,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
+using Newtonsoft.Json;
 
 namespace WeatherApp
 {
     public partial class Form1 : MetroFramework.Forms.MetroForm
     {
+        // Variables and file paths
+
         private ImageConverter imageConverter;
         private Image windDirectionArrow;
         private Image sunset;
@@ -30,9 +33,43 @@ namespace WeatherApp
             "Weather_App",
             "Icons"
             );
+        private readonly string appStateFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Weather_App",
+            "lastWeather.json"
+            );
+        private string lastWeatherJson;
         public Form1()
         {
             InitializeComponent();
+            this.Shown += Form1_Shown;
+        }
+        // Loading previous app state if it exists
+        private async void Form1_Shown(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!File.Exists(appStateFile)) return;
+
+                string savedJson = File.ReadAllText(appStateFile);
+                if (string.IsNullOrWhiteSpace(savedJson)) return;
+
+                var root = JsonConvert.DeserializeObject<WeatherForecast.Rootobject>(savedJson);
+                if (root == null) return;
+
+                
+                tbCityName.Text = root.city.name;
+                this.Text = "Showing the weather for " + root.city.name;
+
+                
+                var dt = await BuildDataTableFromRootAsync(root);
+
+                
+                PopulateUI(dt);
+            }
+            catch
+            {
+                
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -47,17 +84,29 @@ namespace WeatherApp
             cloud = Properties.Resources.cloud;
             termometer = Properties.Resources.degre;
         }
-
-        private void btnSearch_Click(object sender, EventArgs e)
+        // Search button
+        private async void btnSearch_Click(object sender, EventArgs e)
         {
             try
             {
                 if (tbCityName.Text.Length == 0) {
                     MetroFramework.MetroMessageBox.Show(this,"Please input a city name first!");
+                    return;
                 }
                 this.Text = "Showing the weather for " + tbCityName.Text.ToString();
-                OpenWeatherAPI_Call(tbCityName.Text);
                 this.Refresh();
+                await OpenWeatherAPI_Call(tbCityName.Text);
+
+                if (!string.IsNullOrEmpty(lastWeatherJson))
+                {
+                    string folder = Path.GetDirectoryName(appStateFile);
+                    if (!Directory.Exists(folder))
+                        Directory.CreateDirectory(folder);
+
+                    File.WriteAllText(appStateFile, lastWeatherJson);
+                }
+                this.Refresh();
+
             }
             catch (Exception ex)
             {
@@ -65,39 +114,14 @@ namespace WeatherApp
                     Environment.NewLine+ex.Message.ToString(), "Please try again later.");
             }
         }
-
+        // Create the data table when data is recieved from the API and fill the UI
         private async Task OpenWeatherAPI_Call(string cityName)
         {
-           DataTable weatherData = new DataTable();
-            weatherData = await API_Call(cityName);
-
-            chart1.ChartAreas["ChartArea1"].AxisX.Interval = 1;
-            this.chart1.Series.Clear();
-            
-            Title title = new Title();
-            title.Font = new Font("Arial", 16, FontStyle.Bold);
-            title.Text = "Weather in the next 5 days from " + DateTime.Now.DayOfWeek.ToString() + 
-                " to " + DateTime.Now.AddDays(5).DayOfWeek.ToString();
-
-            chart1.Titles.Add(title);
-            Series seriesWeatherData = this.chart1.Series.Add("°C");
-            seriesWeatherData.ChartType = SeriesChartType.Line;
-            seriesWeatherData.Color = Color.Green;
-            seriesWeatherData.BorderWidth = 3;
-            seriesWeatherData.IsVisibleInLegend = false;
-
-            UnloadTiles(metroPanel1);
-            foreach (DataRow item in weatherData.Rows)
-            {
-                seriesWeatherData.Points.AddXY(item["Day of week"].ToString() + " " +
-                    item["Time"].ToString(), Convert.ToDouble(item["Temp"]));
-                MetroTile tile = createNewTile(item["Day of week"].ToString() + " " +
-                    item["Time"].ToString());
-                fillTile(tile, item);
-                addTile(metroPanel1, tile);
-            }
+            var weatherData = await API_Call(cityName);
+            PopulateUI(weatherData);
         }
 
+        // helper methods
         private void addTile(MetroPanel metroPanel1, MetroTile tile)
         {
             var nTiles = metroPanel1.Controls.OfType<MetroTile>().Count();
@@ -220,7 +244,7 @@ namespace WeatherApp
             return tile;
 
         }
-
+        // API call logic and how the data is stored
         private async Task<DataTable> API_Call(string cityName)
         {
             imageConverter = new ImageConverter();
@@ -247,7 +271,9 @@ namespace WeatherApp
             locationData.Columns.Add("Direction", typeof(string));
             locationData.Columns.Add("Wind Direction", typeof(byte[]));
 
+            // API call made in the separate class WeatherForecast
             var weatherData = await WeatherForecast.getApiData(cityName);
+            lastWeatherJson = JsonConvert.SerializeObject(weatherData);
             string locationName = weatherData.city.name;
             string sunrise = convertUnixToDT(double.Parse(weatherData.city.sunrise.ToString(), System.Globalization.CultureInfo.InvariantCulture)).ToString();
             string sunset = convertUnixToDT(double.Parse(weatherData.city.sunset.ToString(), System.Globalization.CultureInfo.InvariantCulture)).ToString();
@@ -302,7 +328,7 @@ namespace WeatherApp
 
             return locationData;
         }
-
+        // helper
         private void UnloadTiles(MetroPanel metroPanel1)
         {
             var tiles = metroPanel1.Controls.OfType<MetroTile>().ToArray();
@@ -315,7 +341,7 @@ namespace WeatherApp
             metroPanel1.HorizontalScroll.Value = 0;
         }
 
-        // Load image safely without locking the file
+        // Load image safely without locking the file , error that image is being used if done normally!
         private Image LoadImageWithoutLock(string filePath)
         {
             using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
@@ -323,7 +349,7 @@ namespace WeatherApp
                 return Image.FromStream(fs);
             }
         }
-
+        // helper methods
         private Image rotateImage(Image windDirectionArrow, float angle)
         {
             if (windDirectionArrow == null)
@@ -355,6 +381,114 @@ namespace WeatherApp
             DateTimeOffset dto = DateTimeOffset.FromUnixTimeSeconds(seconds);
             return dto.LocalDateTime;
         }
+
+        private async Task<DataTable> BuildDataTableFromRootAsync(WeatherForecast.Rootobject weatherData)
+        {
+            imageConverter = new ImageConverter();
+
+            DataTable locationData = new DataTable();
+            locationData.Columns.Add("Temp", typeof(string));
+            locationData.Columns.Add("Temp Min", typeof(string));
+            locationData.Columns.Add("Temp Max", typeof(string));
+            locationData.Columns.Add("Clouds", typeof(string));
+            locationData.Columns.Add("Humidity", typeof(string));
+            locationData.Columns.Add("Weather Description", typeof(string));
+            locationData.Columns.Add("Icon", typeof(byte[]));
+
+            locationData.Columns.Add("Location Name", typeof(string));
+            locationData.Columns.Add("Sunrise", typeof(string));
+            locationData.Columns.Add("Sunset", typeof(string));
+            locationData.Columns.Add("Wind Speed m/s", typeof(string));
+            locationData.Columns.Add("Date", typeof(DateTime));
+            locationData.Columns.Add("Day of week", typeof(string));
+            locationData.Columns.Add("Day", typeof(string));
+            locationData.Columns.Add("Month", typeof(string));
+            locationData.Columns.Add("Year", typeof(string));
+            locationData.Columns.Add("Time", typeof(string));
+            locationData.Columns.Add("Direction", typeof(string));
+            locationData.Columns.Add("Wind Direction", typeof(byte[]));
+
+            string locationName = weatherData.city.name;
+            string sunrise = convertUnixToDT(weatherData.city.sunrise).ToString();
+            string sunset = convertUnixToDT(weatherData.city.sunset).ToString();
+
+            
+            if (!Directory.Exists(weatherIconsDownloadPath))
+                Directory.CreateDirectory(weatherIconsDownloadPath);
+
+            foreach (var wData in weatherData.list)
+            {
+                string windSpeed = wData.wind.speed.ToString();
+                string windDirection = wData.wind.deg.ToString();
+                string currentTemp = Math.Round(convertKelvinToCels(wData.main.temp), 1).ToString();
+                string tempMin = Math.Round(convertKelvinToCels(wData.main.temp_min), 1).ToString();
+                string tempMax = Math.Round(convertKelvinToCels(wData.main.temp_max), 1).ToString();
+                string wDescription = wData.weather[0].description;
+                string clouds = wData.clouds.all.ToString();
+                string humidity = wData.main.humidity.ToString();
+                string weatherIcon = wData.weather[0].icon + "@2x.png";
+
+                byte[] wIconByte = null;
+                string iconPath = Path.Combine(weatherIconsDownloadPath, weatherIcon);
+
+                
+                if (File.Exists(iconPath))
+                {
+                    wIconByte = await Task.Run(() => File.ReadAllBytes(iconPath));
+                }
+
+                DateTime time = Convert.ToDateTime(wData.dt_txt);
+                Image windDirectionIcon = rotateImage(windDirectionArrow, float.Parse(windDirection));
+                byte[] windDirectionIconByte = (byte[])imageConverter.ConvertTo(windDirectionIcon, typeof(byte[]));
+
+                locationData.Rows.Add(new Object[] {
+            currentTemp, tempMin, tempMax, clouds, humidity,
+            wDescription, wIconByte, locationName, sunrise, sunset,
+            windSpeed, time, time.DayOfWeek, time.Day, time.Month,
+            time.Year, time.TimeOfDay, windDirection, windDirectionIconByte
+        });
+
+                windDirectionIcon.Dispose();
+            }
+
+            if (locationData.Rows.Count > 0)
+            {
+                locationData.DefaultView.Sort = "Date asc";
+            }
+
+            return locationData;
+        }
+
+        private void PopulateUI(DataTable weatherData)
+        {
+            chart1.ChartAreas["ChartArea1"].AxisX.Interval = 1;
+            this.chart1.Series.Clear();
+            this.chart1.Titles.Clear(); 
+
+            Title title = new Title();
+            title.Font = new Font("Arial", 16, FontStyle.Bold);
+            title.Text = "Weather in the next 5 days from " + DateTime.Now.DayOfWeek.ToString() +
+                         " to " + DateTime.Now.AddDays(5).DayOfWeek.ToString();
+            chart1.Titles.Add(title);
+
+            Series seriesWeatherData = this.chart1.Series.Add("°C");
+            seriesWeatherData.ChartType = SeriesChartType.Line;
+            seriesWeatherData.Color = Color.Green;
+            seriesWeatherData.BorderWidth = 3;
+            seriesWeatherData.IsVisibleInLegend = false;
+
+            UnloadTiles(metroPanel1);
+            foreach (DataRow item in weatherData.Rows)
+            {
+                seriesWeatherData.Points.AddXY(item["Day of week"].ToString() + " " +
+                    item["Time"].ToString(), Convert.ToDouble(item["Temp"]));
+                MetroTile tile = createNewTile(item["Day of week"].ToString() + " " +
+                    item["Time"].ToString());
+                fillTile(tile, item);
+                addTile(metroPanel1, tile);
+            }
+        }
+
 
         private void metroPanel1_Paint(object sender, PaintEventArgs e)
         {
