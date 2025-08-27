@@ -75,7 +75,7 @@ namespace WeatherApp
         private void Form1_Load(object sender, EventArgs e)
         {
             myCountry = "MK";
-            cbMyCountry.Text = myCountry;
+           
 
             windDirectionArrow = Properties.Resources.right_arrow;
             sunset = Properties.Resources.sunset;
