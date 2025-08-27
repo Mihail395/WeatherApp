@@ -467,8 +467,8 @@ namespace WeatherApp
 
             Title title = new Title();
             title.Font = new Font("Arial", 16, FontStyle.Bold);
-            title.Text = "Weather in the next 5 days from " + DateTime.Now.DayOfWeek.ToString() +
-                         " to " + DateTime.Now.AddDays(5).DayOfWeek.ToString();
+            title.Text = "Temperature in the next 5 days from " + DateTime.Now.DayOfWeek.ToString() +
+                         " to " + DateTime.Now.AddDays(5).DayOfWeek.ToString()+ " (°C)";
             chart1.Titles.Add(title);
 
             Series seriesWeatherData = this.chart1.Series.Add("°C");
