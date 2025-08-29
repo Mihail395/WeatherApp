@@ -13,3 +13,49 @@
 Користеното API е [[OpenWeatherMap](https://openweathermap.org/)]. Поради ограничувања од бесплатната верзија податоците се добиваат за секој следни 3 часа.
 
 ## Опис на решението
+Апликацијата е имплементирана така се внесува име на градот , потоа за тоа име се праќа API повик , се добиваат информации за дадениот град и тие информации од json се конвертираат во потребниот формат и се чуваат во еден DataTable . Исто така потребните слики и добиениот json се чуваат во АppData директориумот на User-от. Се користат и 2 Frameworks ( MetroUI и Newtonsoft Json ) кој служат за подобар и по модерен изглед , a другиот се користи за серијализација и десеријализација на json string. Имплементирана е и серијализација да се зачувува последниот пребаруван град кога повторно ќе се вклучи апликацијата.
+<br>
+#### 1.Податоци кој се чуваат ( во User/AppData/Roaming/Weather_App)<br>
++ Json String од последниот пребаруван град<br>
++ Потребни слики кој се добиваат од API<br>
+#### 2.Структури и класи <br>
++ WeatherForecast – класа која ја прави HTTP поврзаноста кон OpenWeatherAPI и враќа објект од тип Rootobject<br>
+  + Rootobject – ги содржи податоците за градот (City city) и листата на временски мерења (List[] list)<br>
+  + City – информации за градот (име, координати, sunrise/sunset)<br>
+  + List – секој запис во листата содржи Main (температура), Weather (опис и икона), Clouds, Wind ... <br>
++ DataTable – во Form1 се креира DataTable каде што секој ред претставува еден временски запис, со колони:
+"Temp", "Temp Min", "Temp Max", "Clouds", "Humidity", "Weather Description", "Icon", "Location Name", "Sunrise", "Sunset", "Wind Speed m/s", "Date", "Day of week", "Time", "Wind Direction" итн <br>
++ ImageConverter – се користи за претворање на сликите во byte[] и обратно за прикажување во PictureBox контролите <br>
+#### 3.Чување и поврат на податоци<br>
+Кога корисникот пребарува град:
++ Апликацијата повикува WeatherForecast.getApiData(cityName)<br>
++ JSON одговорот се користи за креирање на DataTable<br>
++ Иконите се симнуваат и конвертираат во byte[] за прикажување<br>
++ Податоците се прикажуваат на tiles и графикон<br>
++ Последниот внесен град се зачувува во appStateFile<br>
+При следно отворање:
++ Се проверува appStateFile, ако постои се чита градот и се прикажува временската прогноза автоматски<br>
++ JSON може да се десериализира во Rootobject и да се користи за повторно креирање на DataTable<br>
+## Опис на функции и класи
+### Функција: rotateImage
+```
+private Image rotateImage(Image windDirectionArrow, float angle)
+{
+    if (windDirectionArrow == null)
+        throw new ArgumentNullException(nameof(windDirectionArrow));
+
+    float adjustedAngle = angle - 90f;
+    adjustedAngle += 180f;
+
+    Bitmap rotatedBmp = new Bitmap(windDirectionArrow.Width, windDirectionArrow.Height);
+    rotatedBmp.SetResolution(windDirectionArrow.HorizontalResolution, windDirectionArrow.VerticalResolution);
+    using (Graphics g = Graphics.FromImage(rotatedBmp))
+    {
+        g.TranslateTransform(windDirectionArrow.Width / 2f, windDirectionArrow.Height / 2f);
+        g.RotateTransform(adjustedAngle);
+        g.TranslateTransform(-windDirectionArrow.Width / 2f, -windDirectionArrow.Height / 2f);
+        g.DrawImage(windDirectionArrow, new Point(0, 0));
+    }
+    return rotatedBmp;
+}
+```
